@@ -49,7 +49,7 @@
                     }
                 },
                 "additionalProperties": false,
-                "required": ["name", "affiliation", "email"]
+                "required": ["name", "affiliation"]
             }
         },
         "website_url": {
