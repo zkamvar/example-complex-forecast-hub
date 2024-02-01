@@ -29,7 +29,7 @@
                         },
                         "horizon": {
                             "required": null,
-                            "optional": [-1, 0, 1, 2, 3]
+                            "optional": [0, 1, 2, 3]
                         },
                         "location": {
                             "required": null,
@@ -166,7 +166,7 @@
                         },
                         "horizon": {
                             "required": null,
-                            "optional": [-1, 0, 1, 2, 3]
+                            "optional": [0, 1, 2, 3]
                         },
                         "location": {
                             "required": null,

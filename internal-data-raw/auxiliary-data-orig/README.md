@@ -1,0 +1,1 @@
+The file `locations.csv` was obtained from https://github.com/cdcepi/FluSight-forecast-hub/blob/main/auxiliary-data/locations.csv
