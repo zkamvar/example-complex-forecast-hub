@@ -49,26 +49,28 @@ for (i in seq_along(thresholds)) {
 }
 
 # check with a plot
-ggplot() +
-  geom_line(
-    data = target_data_ts |>
-      mutate(date = as.Date(date)) |>
-      filter(date >= "2022-10-01", date <= "2023-07-01") |>
-      left_join(locations, by = "location") |>
-      filter(!is.na(abbreviation)),
-    mapping = aes(x = date, y = value)
-  ) +
-  geom_hline(
-    data = locations,
-    mapping = aes(yintercept = threshold_1)) +
-  geom_hline(
-    data = locations,
-    mapping = aes(yintercept = threshold_2)) +
-  geom_hline(
-    data = locations,
-    mapping = aes(yintercept = threshold_3)) +
-  facet_wrap( ~ abbreviation, scales = "free_y") +
-  theme_bw()
+if (interactive()) {
+  ggplot() +
+    geom_line(
+      data = target_data_ts |>
+        mutate(date = as.Date(date)) |>
+        filter(date >= "2022-10-01", date <= "2023-07-01") |>
+        left_join(locations, by = "location") |>
+        filter(!is.na(abbreviation)),
+      mapping = aes(x = date, y = value)
+    ) +
+    geom_hline(
+      data = locations,
+      mapping = aes(yintercept = threshold_1)) +
+    geom_hline(
+      data = locations,
+      mapping = aes(yintercept = threshold_2)) +
+    geom_hline(
+      data = locations,
+      mapping = aes(yintercept = threshold_3)) +
+    facet_wrap( ~ abbreviation, scales = "free_y") +
+    theme_bw()
+}
 
 # save
 write_csv(locations,
@@ -84,7 +86,8 @@ target_data_target_values <- expand.grid(
     reference_date = as.Date(task_ids$reference_date$optional),
     horizon = as.integer(task_ids$horizon$optional)) |>
   mutate(
-    target_end_date = as.character(reference_date + 7 * horizon)
+    target_end_date = as.character(reference_date + 7 * horizon),
+    target = "wk inc flu hosp"
   ) |>
   left_join(
     target_data_ts,
@@ -93,12 +96,13 @@ target_data_target_values <- expand.grid(
   arrange(location, reference_date, horizon)
 
 write_csv(target_data_target_values,
-          file = "target-data/flu-hospitalization-value-target-values.csv")
+          file = "target-data/wk-inc-flu-hosp-target-values.csv")
 
 
 target_data_cat_target_values <- target_data_target_values |>
   left_join(locations, by = "location") |>
   mutate(
+    target = "wk flu hosp rate category",
     output_type_id = case_when(
       value <= threshold_1 ~ "low",
       value <= threshold_2 ~ "moderate",
@@ -107,20 +111,22 @@ target_data_cat_target_values <- target_data_target_values |>
     ),
     value = 1
   ) |>
-  select(location, reference_date, horizon, target_end_date, output_type_id,
-         value)
+  select(location, reference_date, horizon, target_end_date, target,
+         output_type_id, value)
 
 # plot to double check
-target_data_combined <- target_data_target_values |>
-  left_join(target_data_cat_target_values |> select(-value))
+if (interactive()) {
+  target_data_combined <- target_data_target_values |>
+    left_join(target_data_cat_target_values |> select(-target, -value))
 
-ggplot(
-  data = target_data_combined |>
-    dplyr::filter(location %in% c("US", "06", "25"))) +
-  geom_point(mapping = aes(x = target_end_date, y = value,
-                           color = output_type_id)) +
-  facet_grid(rows = vars(horizon), cols = vars(location), scales = "free") +
-  theme_bw()
+  ggplot(
+    data = target_data_combined |>
+      dplyr::filter(location %in% c("US", "06", "25"))) +
+    geom_point(mapping = aes(x = target_end_date, y = value,
+                            color = output_type_id)) +
+    facet_grid(rows = vars(horizon), cols = vars(location), scales = "free") +
+    theme_bw()
+}
 
 write_csv(target_data_cat_target_values,
-          file = "target-data/flu-hospitalization-category-target-values.csv")
+          file = "target-data/wk-flu-hosp-rate-category-target-values.csv")
