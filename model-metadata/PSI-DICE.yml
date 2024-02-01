@@ -21,7 +21,7 @@ model_contributors: [
   }
 ]
 website_url: "https://www.predsci.com/usa-flu-hosp/"
-license: "MIT"
+license: "CC-BY-4.0"
 citation: "https://doi.org/10.1371/journal.pcbi.1007013, https://doi.org/10.1371/journal.pcbi.1009230"
 team_funding: "CSTE/CDC: Development of Forecasts and/or Scenario Projections for Influenza to Inform Public Health Decision Making (Cooperative Agreement number NU38OT000297)."
 designated_model: true
