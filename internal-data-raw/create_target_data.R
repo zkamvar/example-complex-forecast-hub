@@ -1,7 +1,5 @@
-library(fs)
-library(readr)
 library(dplyr)
-library(stringr)
+library(readr)
 library(ggplot2)
 library(hubUtils)
 
