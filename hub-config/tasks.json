@@ -243,6 +243,26 @@
                         }
                     },
                     "output_type": {
+                        "mean": {
+                          "output_type_id": {
+                              "required": null,
+                              "optional": ["NA"]
+                          },
+                          "value": {
+                              "type": "double",
+                              "minimum": 0
+                          }
+                        },
+                        "median": {
+                          "output_type_id": {
+                              "required": null,
+                              "optional": ["NA"]
+                          },
+                          "value": {
+                              "type": "double",
+                              "minimum": 0
+                          }
+                        },
                         "quantile": {
                             "output_type_id": {
                                 "required": [

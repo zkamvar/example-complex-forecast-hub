@@ -1,5 +1,5 @@
-team_name: "FluSight-baseline"
-team_abbr: "FluSight"
+team_name: "Flusight"
+team_abbr: "Flusight"
 model_name: "Baseline model using reported weekly admissions"
 model_abbr: "baseline"
 model_version: "1.0"
