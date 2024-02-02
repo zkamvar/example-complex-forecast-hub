@@ -69,6 +69,7 @@
                 "CC0-1.0",
                 "CC-BY-4.0",
                 "CC-BY_SA-4.0",
+                "CC-BY-NC-SA-4.0",
                 "PPDL",
                 "ODC-by",
                 "ODbL",
@@ -109,6 +110,10 @@
         "ensemble_of_hub_models": {
             "description": "Indicator for whether this model is an ensemble specifically of other models submitted to this Hub",
             "type": "boolean"
+        },
+        "source_notes": {
+            "description": "Original source of the model output data",
+            "type": "string"
         }
     },
     "additionalProperties": false,

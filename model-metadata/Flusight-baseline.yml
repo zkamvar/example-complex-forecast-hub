@@ -39,3 +39,4 @@ methods_long: "The median prediction at all future horizons
   0."
 ensemble_of_models: false
 ensemble_of_hub_models: false
+source_notes: "Model outputs and metadata adapted from https://github.com/cdcepi/Flusight-forecast-data."
