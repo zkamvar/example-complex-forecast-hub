@@ -20,7 +20,7 @@ jobs:
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v1
       with:
-        role-to-assume: arn:aws:iam::312560106906:role/hubverse-${{ github.event.repository.name }}-githubaction
+        role-to-assume: arn:aws:iam::767397675902:role/hubverse-${{ github.event.repository.name }}-githubaction-role
         aws-region: us-east-1
 
     - name: Copy files to S3
