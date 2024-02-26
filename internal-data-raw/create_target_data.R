@@ -18,7 +18,7 @@ locations_raw <- read.csv(
 target_data_ts <- target_data_raw[, c("date", "location", "value")] |>
   filter(location %in% locations_raw$location)
 write_csv(target_data_ts,
-          file = "target-data/flu-hospitalization-time-series.csv")
+          file = "target-data/time-series.csv")
 
 
 # create auxiliary-data/locations.csv
@@ -93,9 +93,6 @@ target_data_target_values <- expand.grid(
   ) |>
   arrange(location, reference_date, horizon)
 
-write_csv(target_data_target_values,
-          file = "target-data/wk-inc-flu-hosp-target-values.csv")
-
 
 target_data_cat_target_values <- target_data_target_values |>
   left_join(locations, by = "location") |>
@@ -126,5 +123,10 @@ if (interactive()) {
     theme_bw()
 }
 
-write_csv(target_data_cat_target_values,
-          file = "target-data/wk-flu-hosp-rate-category-target-values.csv")
+target_data <- dplyr::bind_rows(
+  target_data_target_values,
+  target_data_cat_target_values
+)
+
+write_csv(target_data,
+          file = "target-data/target-values.csv")
