@@ -109,10 +109,20 @@ target_data_cat_target_values <- target_data_target_values |>
   select(location, reference_date, horizon, target_end_date, target,
          output_type_id, value)
 
+target_data_cat_target_values_complete <- target_data_cat_target_values |>
+  dplyr::select(-output_type_id, -value) |>
+  dplyr::cross_join(
+    data.frame(output_type_id = c("low", "moderate", "high", "very high"))
+  ) |>
+  dplyr::left_join(target_data_cat_target_values,
+                   by = join_by(location, reference_date, horizon,
+                                target_end_date, target, output_type_id)) |>
+  dplyr::mutate(value = ifelse(is.na(value), 0, 1))
+
 # plot to double check
 if (interactive()) {
   target_data_combined <- target_data_target_values |>
-    left_join(target_data_cat_target_values |> select(-target, -value))
+    left_join(target_data_cat_target_values_complete |> filter(value == 1) |> select(-target, -value))
 
   ggplot(
     data = target_data_combined |>
@@ -125,7 +135,7 @@ if (interactive()) {
 
 target_data <- dplyr::bind_rows(
   target_data_target_values,
-  target_data_cat_target_values
+  target_data_cat_target_values_complete
 )
 
 write_csv(target_data,
