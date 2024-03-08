@@ -71,6 +71,33 @@ get_cat_forecasts_from_q <- function(df, locations) {
   return(result)
 }
 
+get_cdf_values <- function(output_type_id, value, x) {
+  p_fn <- distfromq::make_p_fn(ps = as.numeric(output_type_id),
+                               qs = as.numeric(value))
+  return(list(p_fn(x)))
+}
+
+get_rate_cdf_forecasts_from_q <- function(df, locations) {
+  cdf_x_values <- seq(from = 0.25, to = 25, by = 0.25)
+  result <- df |>
+    left_join(locations, by = "location") |>
+    mutate(rate = value / (population / 100000)) |>
+    group_by(location, reference_date, horizon, target_end_date) |>
+    summarize(
+      target = "wk flu hosp rate",
+      value = get_cdf_values(output_type_id, rate, cdf_x_values),
+      output_type = "cdf",
+      output_type_id = list(as.character(cdf_x_values)),
+      .groups = "drop"
+    ) |>
+    unnest(cols = c(output_type_id, value)) |>
+    select(location, reference_date, horizon, target_end_date, target,
+           output_type, output_type_id, value)
+
+  return(result)
+}
+
+
 locations <- read_csv("auxiliary-data/locations.csv")
 
 files <- Sys.glob("internal-data-raw/model-output-orig/*/*")
@@ -99,7 +126,8 @@ for (f in files) {
     df %>% dplyr::mutate(output_type_id = as.character(output_type_id)),
     get_median_forecasts_from_q(df),
     get_mean_forecasts_from_q(df),
-    get_cat_forecasts_from_q(df, locations)
+    get_cat_forecasts_from_q(df, locations),
+    get_rate_cdf_forecasts_from_q(df, locations)
   )
 
   path_parts <- fs::path_split(f)[[1]][2:4]
