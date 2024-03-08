@@ -92,7 +92,8 @@ get_rate_cdf_forecasts_from_q <- function(df, locations) {
     ) |>
     unnest(cols = c(output_type_id, value)) |>
     select(location, reference_date, horizon, target_end_date, target,
-           output_type, output_type_id, value)
+           output_type, output_type_id, value) |>
+    mutate(value = pmax(pmin(value, 1), 0))
 
   return(result)
 }
