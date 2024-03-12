@@ -154,17 +154,30 @@ write_csv(target_data_complete,
 
 target_data_distinct <- bind_rows(
   target_data_complete |>
+    filter(output_type == "quantile") |>
+    mutate(output_type_id = "*") |>
+    distinct(),
+  target_data_complete |>
+    filter(output_type != "quantile")
+)
+
+write_csv(target_data_distinct,
+          file = "target-data/target-values-distinct_oti.csv")
+
+
+target_data_distinct <- bind_rows(
+  target_data_complete |>
     filter(target == "wk inc flu hosp") |>
-    mutate(reference_date = "NA", horizon = "NA",
-           output_type = "NA", output_type_id = "NA") |>
+    mutate(reference_date = "*", horizon = "*",
+           output_type = "*", output_type_id = "*") |>
     distinct(),
   target_data_complete |>
     filter(target == "wk flu hosp rate category") |>
-    mutate(reference_date = "NA", horizon = "NA") |>
+    mutate(reference_date = "*", horizon = "*") |>
     distinct(),
   target_data_complete |>
     filter(target == "wk flu hosp rate") |>
-    mutate(reference_date = "NA", horizon = "NA") |>
+    mutate(reference_date = "*", horizon = "*") |>
     distinct()
 )
 
@@ -172,20 +185,20 @@ write_csv(target_data_distinct,
           file = "target-data/target-values-distinct.csv")
 
 
+
+
 target_data_obs_bin_only <- bind_rows(
   target_data_complete |>
-    filter(target == "wk inc flu hosp") |>
-    mutate(reference_date = "NA", horizon = "NA",
-           output_type = "NA", output_type_id = "NA") |>
+    filter(target == "wk inc flu hosp", output_type == "quantile") |>
+    mutate(output_type_id = "*") |>
     distinct(),
   target_data_complete |>
-    filter(target == "wk flu hosp rate category", value > 0) |>
-    mutate(reference_date = "NA", horizon = "NA") |>
-    distinct(),
+    filter(target == "wk inc flu hosp", output_type != "quantile"),
+  target_data_complete |>
+    filter(target == "wk flu hosp rate category", value > 0),
   target_data_complete |>
     filter(target == "wk flu hosp rate", value > 0) |>
-    mutate(reference_date = "NA", horizon = "NA",
-           numeric_oti = as.numeric(output_type_id)) |>
+    mutate(numeric_oti = as.numeric(output_type_id)) |>
     distinct() |>
     group_by(location, reference_date, horizon, target_end_date, target,
              output_type) |>
@@ -195,8 +208,7 @@ target_data_obs_bin_only <- bind_rows(
 )
 
 write_csv(target_data_obs_bin_only,
-          file = "target-data/target-values-obs-bin-only.csv")
-
+          file = "target-data/target-values-distinct-oti-obs-bin-only.csv")
 
 
 # plot to double check
