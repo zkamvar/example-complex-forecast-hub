@@ -148,10 +148,8 @@ target_data_complete <- bind_rows(
   obs_target_values_rate_cat,
   obs_target_values_rate)
 
-write_csv(target_data_complete,
-          file = "target-data/target-values-complete.csv")
-
-
+# set output_type_id to "*" for the quantile output_type,
+# then remove duplicate rows created by that action
 target_data_distinct <- bind_rows(
   target_data_complete |>
     filter(output_type == "quantile") |>
@@ -162,74 +160,4 @@ target_data_distinct <- bind_rows(
 )
 
 write_csv(target_data_distinct,
-          file = "target-data/target-values-distinct_oti.csv")
-
-
-target_data_distinct <- bind_rows(
-  target_data_complete |>
-    filter(target == "wk inc flu hosp") |>
-    mutate(reference_date = "*", horizon = "*",
-           output_type = "*", output_type_id = "*") |>
-    distinct(),
-  target_data_complete |>
-    filter(target == "wk flu hosp rate category") |>
-    mutate(reference_date = "*", horizon = "*") |>
-    distinct(),
-  target_data_complete |>
-    filter(target == "wk flu hosp rate") |>
-    mutate(reference_date = "*", horizon = "*") |>
-    distinct()
-)
-
-write_csv(target_data_distinct,
-          file = "target-data/target-values-distinct.csv")
-
-
-
-
-target_data_obs_bin_only <- bind_rows(
-  target_data_complete |>
-    filter(target == "wk inc flu hosp", output_type == "quantile") |>
-    mutate(output_type_id = "*") |>
-    distinct(),
-  target_data_complete |>
-    filter(target == "wk inc flu hosp", output_type != "quantile"),
-  target_data_complete |>
-    filter(target == "wk flu hosp rate category", value > 0),
-  target_data_complete |>
-    filter(target == "wk flu hosp rate", value > 0) |>
-    mutate(numeric_oti = as.numeric(output_type_id)) |>
-    distinct() |>
-    group_by(location, reference_date, horizon, target_end_date, target,
-             output_type) |>
-    slice_min(numeric_oti) |>
-    ungroup() |>
-    select(-numeric_oti)
-)
-
-write_csv(target_data_obs_bin_only,
-          file = "target-data/target-values-distinct-oti-obs-bin-only.csv")
-
-
-# plot to double check
-if (interactive()) {
-  target_data_combined <- target_data_target_values |>
-    left_join(target_data_cat_target_values_complete |> filter(value == 1) |> select(-target, -value))
-
-  ggplot(
-    data = target_data_combined |>
-      dplyr::filter(location %in% c("US", "06", "25"))) +
-    geom_point(mapping = aes(x = target_end_date, y = value,
-                            color = output_type_id)) +
-    facet_grid(rows = vars(horizon), cols = vars(location), scales = "free") +
-    theme_bw()
-}
-
-# target_data <- dplyr::bind_rows(
-#   target_data_target_values,
-#   target_data_cat_target_values_complete
-# ) |>
-#   relocate("output_type_id", .before = "value")
-
-# write_csv(target_data,
-#           file = "target-data/target-values.csv")
+          file = "target-data/target-values.csv")
