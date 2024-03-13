@@ -18,33 +18,22 @@ locations_raw <- read.csv(
 target_data_ts <- target_data_raw[, c("date", "location", "value")] |>
   filter(location %in% locations_raw$location)
 write_csv(target_data_ts,
-          file = "target-data/flu-hospitalization-time-series.csv")
+          file = "target-data/time-series.csv")
 
 
 # create auxiliary-data/locations.csv
-
-# Exploration used to identify thresholds in terms of rate per 100k population
 locations <- locations_raw[, c("location", "abbreviation", "location_name",
                                "population")]
 
-max_obs <- target_data_ts |>
-  filter(location == "US") |>
-  pull(value) |>
-  max()
-
-us_pop <- locations |>
-  filter(location == "US") |>
-  pull(population)
-max_rate <- max_obs / (us_pop / 100000)
-
-# max_rate is 7.92685
-# for illustrative purposes, we will set thresholds at 2.5, 5, and 7.5
-# hospital admissions per 100,000 population.
+# add threholds on hospital admissions per 100,000 population defining intensity
+# category boundaries
 thresholds <- c(2.5, 5, 7.5)
 for (i in seq_along(thresholds)) {
   locations[[paste0("threshold_", i)]] <-
     floor(locations[["population"]] / 100000 * thresholds[i])
 }
+
+write_csv(locations, file = "auxiliary-data/locations.csv")
 
 # check with a plot
 if (interactive()) {
@@ -70,34 +59,54 @@ if (interactive()) {
     theme_bw()
 }
 
-# save
-write_csv(locations,
-          file = "auxiliary-data/locations.csv")
-
 
 # observed target values, suitable for use in scoring forecasts
 tasks_config <- hubUtils::read_config(".", "tasks")
-task_ids <- tasks_config$rounds[[1]]$model_tasks[[1]]$task_ids
 
-target_data_target_values <- expand.grid(
-    location = task_ids$location$optional,
-    reference_date = as.Date(task_ids$reference_date$optional),
-    horizon = as.integer(task_ids$horizon$optional)) |>
-  mutate(
-    target_end_date = as.character(reference_date + 7 * horizon),
-    target = "wk inc flu hosp"
-  ) |>
+get_expanded_tasks_outputs <- function(target_block) {
+  task_ids <- target_block$task_ids
+  output_meta <- target_block$output_type
+
+  tasks_expanded <- expand.grid(
+      location = task_ids$location$optional,
+      reference_date = as.Date(task_ids$reference_date$optional),
+      horizon = as.integer(task_ids$horizon$optional),
+      target = task_ids$target$optional) |>
+    mutate(
+      target_end_date = as.character(reference_date + 7 * horizon),
+      .after = horizon
+    )
+
+  outputs_expanded <- purrr::map(
+    names(output_meta),
+    function(output_type) {
+      output_type_meta <- output_meta[[output_type]]
+      data.frame(
+        output_type = output_type,
+        output_type_id = output_type_meta$output_type_id |> unlist() |> unname()
+      )
+    }) |>
+    purrr::list_rbind()
+
+  cross_join(tasks_expanded, outputs_expanded)
+}
+
+t1 <- get_expanded_tasks_outputs(tasks_config$rounds[[1]]$model_tasks[[1]])
+t2 <- get_expanded_tasks_outputs(tasks_config$rounds[[1]]$model_tasks[[2]])
+t3 <- get_expanded_tasks_outputs(tasks_config$rounds[[1]]$model_tasks[[3]])
+
+# bind then subset to reduce sensitivity to order of the tasks in the tasks.json
+# file in case that changes later
+target_rows <- rbind(t1, t2, t3)
+
+obs_target_values_inc <- target_rows |>
+  filter(target == "wk inc flu hosp") |>
   left_join(
     target_data_ts,
     by = join_by(location, target_end_date == date)
-  ) |>
-  arrange(location, reference_date, horizon)
+  )
 
-write_csv(target_data_target_values,
-          file = "target-data/wk-inc-flu-hosp-target-values.csv")
-
-
-target_data_cat_target_values <- target_data_target_values |>
+obs_rate_cat <- target_data_ts |>
   left_join(locations, by = "location") |>
   mutate(
     target = "wk flu hosp rate category",
@@ -108,23 +117,47 @@ target_data_cat_target_values <- target_data_target_values |>
       TRUE ~ "very high"
     ),
     value = 1
+  )
+
+obs_target_values_rate_cat <- target_rows |>
+  filter(target == "wk flu hosp rate category") |>
+  left_join(
+    obs_rate_cat |> select(location, date, output_type_id, value),
+    by = join_by(location, target_end_date == date, output_type_id)) |>
+  mutate(
+    value = ifelse(is.na(value), 0, 1)
+  )
+
+obs_rates <- target_data_ts |>
+  left_join(locations, by = "location") |>
+  mutate(rate = value / (population / 100000))
+
+obs_target_values_rate <- target_rows |>
+  filter(target == "wk flu hosp rate") |>
+  left_join(
+    obs_rates |> select(location, date, rate),
+    by = join_by(location, target_end_date == date)) |>
+  mutate(
+    value = as.integer(as.numeric(output_type_id) >= rate)
   ) |>
-  select(location, reference_date, horizon, target_end_date, target,
-         output_type_id, value)
+  select(-rate)
 
-# plot to double check
-if (interactive()) {
-  target_data_combined <- target_data_target_values |>
-    left_join(target_data_cat_target_values |> select(-target, -value))
 
-  ggplot(
-    data = target_data_combined |>
-      dplyr::filter(location %in% c("US", "06", "25"))) +
-    geom_point(mapping = aes(x = target_end_date, y = value,
-                            color = output_type_id)) +
-    facet_grid(rows = vars(horizon), cols = vars(location), scales = "free") +
-    theme_bw()
-}
+target_data_complete <- bind_rows(
+  obs_target_values_inc,
+  obs_target_values_rate_cat,
+  obs_target_values_rate)
 
-write_csv(target_data_cat_target_values,
-          file = "target-data/wk-flu-hosp-rate-category-target-values.csv")
+# set output_type_id to "*" for the quantile output_type,
+# then remove duplicate rows created by that action
+target_data_distinct <- bind_rows(
+  target_data_complete |>
+    filter(output_type == "quantile") |>
+    mutate(output_type_id = "*") |>
+    distinct(),
+  target_data_complete |>
+    filter(output_type != "quantile")
+)
+
+write_csv(target_data_distinct,
+          file = "target-data/target-values.csv")
