@@ -159,5 +159,10 @@ target_data_distinct <- bind_rows(
     filter(output_type != "quantile")
 )
 
+# drop reference_date and horizon columns
+target_data_distinct <- target_data_distinct |>
+  select(-reference_date, -horizon) |>
+  distinct()
+
 write_csv(target_data_distinct,
           file = "target-data/target-values.csv")
