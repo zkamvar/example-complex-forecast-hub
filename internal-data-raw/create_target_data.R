@@ -16,7 +16,8 @@ locations_raw <- read.csv(
 
 # save target data in time series format
 target_data_ts <- target_data_raw[, c("date", "location", "value")] |>
-  filter(location %in% locations_raw$location)
+  filter(location %in% locations_raw$location) |>
+  rename(observation = value)
 write_csv(target_data_ts,
           file = "target-data/time-series.csv")
 
@@ -111,26 +112,26 @@ obs_rate_cat <- target_data_ts |>
   mutate(
     target = "wk flu hosp rate category",
     output_type_id = case_when(
-      value <= threshold_1 ~ "low",
-      value <= threshold_2 ~ "moderate",
-      value <= threshold_3 ~ "high",
+      observation <= threshold_1 ~ "low",
+      observation <= threshold_2 ~ "moderate",
+      observation <= threshold_3 ~ "high",
       TRUE ~ "very high"
     ),
-    value = 1
+    observation = 1
   )
 
 obs_target_values_rate_cat <- target_rows |>
   filter(target == "wk flu hosp rate category") |>
   left_join(
-    obs_rate_cat |> select(location, date, output_type_id, value),
+    obs_rate_cat |> select(location, date, output_type_id, observation),
     by = join_by(location, target_end_date == date, output_type_id)) |>
   mutate(
-    value = ifelse(is.na(value), 0, 1)
+    observation = ifelse(is.na(observation), 0, 1)
   )
 
 obs_rates <- target_data_ts |>
   left_join(locations, by = "location") |>
-  mutate(rate = value / (population / 100000))
+  mutate(rate = observation / (population / 100000))
 
 obs_target_values_rate <- target_rows |>
   filter(target == "wk flu hosp rate") |>
@@ -138,7 +139,7 @@ obs_target_values_rate <- target_rows |>
     obs_rates |> select(location, date, rate),
     by = join_by(location, target_end_date == date)) |>
   mutate(
-    value = as.integer(as.numeric(output_type_id) >= rate)
+    observation = as.integer(as.numeric(output_type_id) >= rate)
   ) |>
   select(-rate)
 
@@ -148,12 +149,12 @@ target_data_complete <- bind_rows(
   obs_target_values_rate_cat,
   obs_target_values_rate)
 
-# set output_type_id to "*" for the quantile output_type,
+# set output_type_id to "NA" for the quantile output_type,
 # then remove duplicate rows created by that action
 target_data_distinct <- bind_rows(
   target_data_complete |>
     filter(output_type == "quantile") |>
-    mutate(output_type_id = "*") |>
+    mutate(output_type_id = "NA") |>
     distinct(),
   target_data_complete |>
     filter(output_type != "quantile")
@@ -165,4 +166,4 @@ target_data_distinct <- target_data_distinct |>
   distinct()
 
 write_csv(target_data_distinct,
-          file = "target-data/target-values.csv")
+          file = "target-data/target-observations.csv")
