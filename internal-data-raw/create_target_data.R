@@ -84,9 +84,14 @@ get_expanded_tasks_outputs <- function(target_block) {
       output_type_meta <- output_meta[[output_type]]
       data.frame(
         output_type = output_type,
-        output_type_id = output_type_meta$output_type_id |> unlist() |> unname()
+        output_type_id = ifelse(
+          output_type == "sample",
+          NA,
+          output_type_meta$output_type_id |> unlist() |> unname()
+        )
       )
-    }) |>
+    }
+  ) |>
     purrr::list_rbind()
 
   cross_join(tasks_expanded, outputs_expanded)

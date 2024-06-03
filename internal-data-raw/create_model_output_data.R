@@ -40,6 +40,89 @@ get_mean_forecasts_from_q <- function(df) {
   return(result)
 }
 
+#' apply the schaake shuffle to matrices of simulated and observed values
+schaake_shuffle <- function(sim, obs) {
+  stopifnot(all(dim(sim) == dim(obs)))
+
+  # apply shuffle, iterating over columns. See Eq. (9) - (12) in
+  # Clark, Martyn, et al. "The Schaake shuffle: A method for reconstructing
+  # space–time variability in forecasted precipitation and temperature fields."
+  # Journal of Hydrometeorology 5.1 (2004): 243-262.
+  result <- matrix(NA, nrow = nrow(sim), ncol = ncol(sim))
+  for (j in seq_len(ncol(sim))) {
+    result[order(obs[, j]), j] <- sort(sim[, j])
+  }
+
+  return(result)
+}
+
+
+#' Apply the Schaake shuffle to vector of simulated values x, with the
+#' ground truth being draws from an AR(rho) process.
+#'
+#' This is more like using a Gaussian copula than the Schaake shuffle.
+schaake_shuffle_ar <- function(value, horizon, sample_index, rho) {
+  H <- max(horizon)
+  n <- max(sample_index)
+
+  # construct x, a matrix of provided values
+  x <- matrix(NA, nrow = n, ncol = H)
+  x[cbind(sample_index, horizon)] <- value
+
+  # simulate n replicates from an AR(rho) process,
+  # H observations for each replicate
+  innovations <- matrix(rnorm(n * H, sd = 1), nrow = n, ncol = H)
+  y_0 <- rnorm(n, mean = 0, sd = sqrt(1 / (1 - rho^2)))
+  y <- matrix(NA, nrow = n, ncol = H)
+  y[, 1] <- rho * y_0 + innovations[, 1]
+  for (i in seq(from = 2, to = H)) {
+    y[, i] <- rho * y[, i - 1] + innovations[, i]
+  }
+
+  # apply Schaake shuffle
+  x_ordered <- schaake_shuffle(sim = x, obs = y)
+
+  # return values from x_ordered, matching input horion and sample_index
+  return(x_ordered[cbind(sample_index, horizon)])
+}
+
+get_sample_forecasts_from_q <- function(df, n = 100, rho = 0.9) {
+  # set up a data frame with marginal samples for each date/location,
+  # joint across horizon
+  df <- df |>
+    dplyr::filter(output_type == "quantile") |>
+    dplyr::group_by(location, reference_date, horizon, target_end_date,
+                    target) |>
+    # draw samples from marginal distributions by location/date/horizon
+    dplyr::summarize(
+      value = list(
+        distfromq::make_r_fn(ps = output_type_id, qs = value)(n) |>
+          round()
+      ),
+      sample_index = list(seq_len(n)),
+      .groups = "drop"
+    ) |>
+    tidyr::unnest(cols = c(value, sample_index)) |>
+    dplyr::group_by(location, reference_date) |>
+    # induce dependence across horizons for each location/date combo
+    dplyr::mutate(
+      value = schaake_shuffle_ar(value, horizon + 1, sample_index, rho)
+    ) |>
+    dplyr::ungroup() |>
+    # get to desired columns: output_type, output_type_id, no sample_index
+    dplyr::mutate(
+      output_type = "sample",
+      output_type_id = as.character(
+        sample_index +
+          n * (as.integer(factor(paste0(location, reference_date))) - 1)
+      )
+    ) |>
+    dplyr::select(-sample_index) |>
+    dplyr::ungroup()
+
+  return(df)
+}
+
 get_cat_probs <- function(output_type_id, value, threshold_1, threshold_2,
                           threshold_3) {
   p_fn <- distfromq::make_p_fn(ps = as.numeric(output_type_id),
@@ -127,6 +210,7 @@ for (f in files) {
     df %>% dplyr::mutate(output_type_id = as.character(output_type_id)),
     get_median_forecasts_from_q(df),
     get_mean_forecasts_from_q(df),
+    get_sample_forecasts_from_q(df),
     get_cat_forecasts_from_q(df, locations),
     get_rate_cdf_forecasts_from_q(df, locations)
   )
