@@ -45,7 +45,7 @@ if (interactive()) {
         filter(date >= "2022-10-01", date <= "2023-07-01") |>
         left_join(locations, by = "location") |>
         filter(!is.na(abbreviation)),
-      mapping = aes(x = date, y = value)
+      mapping = aes(x = date, y = observation)
     ) +
     geom_hline(
       data = locations,
@@ -82,14 +82,21 @@ get_expanded_tasks_outputs <- function(target_block) {
     names(output_meta),
     function(output_type) {
       output_type_meta <- output_meta[[output_type]]
-      data.frame(
-        output_type = output_type,
-        output_type_id = ifelse(
-          output_type == "sample",
-          NA,
-          output_type_meta$output_type_id |> unlist() |> unname()
+      if (output_type == "sample") {
+        return(
+          data.frame(
+            output_type = output_type,
+            output_type_id = NA
+          )
         )
-      )
+      } else {
+        return(
+          data.frame(
+            output_type = output_type,
+            output_type_id = output_type_meta$output_type_id |> unlist() |> unname()
+          )
+        )
+      }
     }
   ) |>
     purrr::list_rbind()
