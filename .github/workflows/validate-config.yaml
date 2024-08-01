@@ -49,7 +49,7 @@ jobs:
         shell: Rscript {0}
       - name: "Comment on PR"
         id: comment-diff
-        if: ${{ steps.validate.outputs.result == 'false' }}
+        if: ${{ github.event_name != 'workflow_dispatch' && steps.validate.outputs.result == 'false' }}
         uses: carpentries/actions/comment-diff@main
         with:
           pr: ${{ github.event.number }}
