@@ -46,6 +46,8 @@ jobs:
             tbl <- hubAdmin::view_config_val_errors(v)
             writeLines("oh noes!\n", "${{ github.workspace }}/diff.md")
             cat(gt::as_raw_html(tbl), "${{ github.workspace }}/diff.md", append = TRUE)
+          } else {
+            cat("result=true", file = Sys.getenv("GITHUB_OUTPUT"), append = TRUE)
           }
         shell: Rscript {0}
       - name: "show outupt"
