@@ -41,13 +41,14 @@ jobs:
           )
           if (isFALSE(v)) {
             print("NO WORKIE")
-            cat("result=false", file = Sys.getenv("GITHUB_OUTPUT"), append = TRUE)
+            cat("result=false", "\n", file = Sys.getenv("GITHUB_OUTPUT"), sep = "", append = TRUE)
             # write output to HTML
             tbl <- hubAdmin::view_config_val_errors(v)
             writeLines("oh noes!\n", "${{ github.workspace }}/diff.md")
-            cat(gt::as_raw_html(tbl), "${{ github.workspace }}/diff.md", append = TRUE)
+            cat(gt::as_raw_html(tbl), "\n", file = "${{ github.workspace }}/diff.md", sep = "", append = TRUE)
           } else {
-            cat("result=true", file = Sys.getenv("GITHUB_OUTPUT"), append = TRUE)
+            print("WORKIE")
+            cat("result=true", "\n", file = Sys.getenv("GITHUB_OUTPUT"), sep = "", append = TRUE)
           }
         shell: Rscript {0}
       - name: "show outupt"
