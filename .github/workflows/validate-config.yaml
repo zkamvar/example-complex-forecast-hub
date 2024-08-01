@@ -39,7 +39,7 @@ jobs:
           v <- hubAdmin::validate_hub_config(
             hub_path = "${{ github.workspace }}"
           )
-          invalid <- !v
+          invalid <- isFALSE(v)
           if (invalid) {
             print("NO WORKIE")
             cat("result=false", "\n", file = Sys.getenv("GITHUB_OUTPUT"), sep = "", append = TRUE)
