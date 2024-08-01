@@ -40,6 +40,7 @@ jobs:
             hub_path = "${{ github.workspace }}"
           )
           if (isFALSE(v)) {
+            print("NO WORKIE")
             cat("result=false", file = Sys.getenv("GITHUB_OUTPUT"), append = TRUE)
             # write output to HTML
             tbl <- hubAdmin::view_config_val_errors(v)
@@ -47,6 +48,9 @@ jobs:
             cat(gt::as_raw_html(tbl), "${{ github.workspace }}/diff.md", append = TRUE)
           }
         shell: Rscript {0}
+      - name: "show outupt"
+        run: |
+          echo ${{ steps.validate.outputs.result }}
       - name: "Comment on PR"
         id: comment-diff
         if: ${{ github.event_name != 'workflow_dispatch' && steps.validate.outputs.result == 'false' }}
