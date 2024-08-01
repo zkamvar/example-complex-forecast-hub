@@ -3,7 +3,7 @@
     "name": "Example complex forecast hub",
     "maintainer": "hubverse",
     "contact": {
-        "name": ["Maintainer", "name!"],
+        "name": ["Maintainer!", "name?"],
         "email": "maintainer.email@example.com"
     },
     "repository": {
