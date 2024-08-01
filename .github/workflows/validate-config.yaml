@@ -59,4 +59,7 @@ jobs:
         with:
           pr: ${{ github.event.number }}
           path: ${{ github.workspace }}/diff.md
+      - name: Error on Failure
+        if: ${{ steps.validate.outputs.result == 'false' }}
+        run: exit 1
 
