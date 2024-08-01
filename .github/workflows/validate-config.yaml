@@ -49,6 +49,7 @@ jobs:
             cat(gt::as_raw_html(tbl), "\n", file = "${{ github.workspace }}/diff.md", sep = "", append = TRUE)
           } else {
             print("WORKIE")
+            print(v)
             cat("result=true", "\n", file = Sys.getenv("GITHUB_OUTPUT"), sep = "", append = TRUE)
           }
         shell: Rscript {0}
