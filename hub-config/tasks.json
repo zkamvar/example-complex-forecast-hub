@@ -32,7 +32,7 @@
                             "optional": [0, 1, 2, 3]
                         },
                         "location": {
-                            "required": null,
+                            "required": 42,
                             "optional": [
                                 "US",
                                 "01",
