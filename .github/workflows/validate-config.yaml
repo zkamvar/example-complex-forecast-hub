@@ -42,21 +42,16 @@ jobs:
           # check if there were any failures
           invalid <- any(vapply(v, isFALSE, logical(1)))
           if (invalid) {
-            print("NO WORKIE")
             cat("result=false", "\n", file = Sys.getenv("GITHUB_OUTPUT"), sep = "", append = TRUE)
             # write output to HTML
             tbl <- hubAdmin::view_config_val_errors(v)
-            writeLines("oh noes!\n", "${{ github.workspace }}/diff.md")
+            writeLines("## :x: Invalid Configuration\n", "${{ github.workspace }}/diff.md")
+            cat("\nThe schema in `hub-config/` appear to be invalid. Details about the exact locations of the errors can be found in the table below.\n", file = "${{ github.workspace }}/diff.md", append = TRUE)
             cat(gt::as_raw_html(tbl), "\n", file = "${{ github.workspace }}/diff.md", sep = "", append = TRUE)
           } else {
-            print("WORKIE")
-            print(v)
             cat("result=true", "\n", file = Sys.getenv("GITHUB_OUTPUT"), sep = "", append = TRUE)
           }
         shell: Rscript {0}
-      - name: "show outupt"
-        run: |
-          echo ${{ steps.validate.outputs.result }}
       - name: "Comment on PR"
         id: comment-diff
         if: ${{ github.event_name != 'workflow_dispatch' && steps.validate.outputs.result == 'false' }}
