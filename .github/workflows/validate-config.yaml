@@ -41,9 +41,11 @@ jobs:
           diff <- Sys.getenv("DIFF_PATH")
           hub_path <- dirname(diff)
           output <- Sys.getenv("GITHUB_OUTPUT")
-          v <- hubAdmin::validate_hub_config(
-            hub_path = hub_path
-          )
+          msg <- capture.output({
+            v <- hubAdmin::validate_hub_config(
+              hub_path = hub_path
+            )
+          }, type = "message")
           # check if there were any failures
           invalid <- any(vapply(v, isFALSE, logical(1)))
           if (invalid) {
@@ -55,6 +57,7 @@ jobs:
             cat(gt::as_raw_html(tbl), "\n", file = diff, sep = "", append = TRUE)
           } else {
             cat("result=true", "\n", file = output, sep = "", append = TRUE)
+            cat("message=", msg, "\n", file = output, sep = "", append = TRUE)
             writeLines(":white_check_mark: all checks passed\n", diff)
           }
         shell: Rscript {0}
@@ -68,6 +71,6 @@ jobs:
       - name: Error on Failure
         if: ${{ steps.validate.outputs.result == 'false' }}
         run: |
-          echo "::error title=Invalid Configuration::Errors were detected in one or more config files in `hub-config/`."
+          echo '::error title=Invalid Configuration::Errors were detected in one or more config files in "hub-config/" with the following message: ${{ steps.validate.outputs.message }}'
           exit 1
 
