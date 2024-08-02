@@ -24,7 +24,7 @@
                             ]
                         },
                         "target": {
-                            "required": 42,
+                            "required": null,
                             "optional": ["wk flu hosp rate category"]
                         },
                         "horizon": {
