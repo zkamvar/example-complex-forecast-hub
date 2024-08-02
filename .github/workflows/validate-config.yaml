@@ -38,7 +38,7 @@ jobs:
       - name: Run validations
         id: validate
         run: |
-          diff <- Sys.gentenv("DIFF_PATH")
+          diff <- Sys.getenv("DIFF_PATH")
           hub_path <- dirname(diff)
           output <- Sys.getenv("GITHUB_OUTPUT")
           v <- hubAdmin::validate_hub_config(
