@@ -31,7 +31,9 @@ jobs:
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          packages: any::hubAdmin, any::sessioninfo
+          packages: |
+            standard::hubAdmin
+            any::sessioninfo
 
       - name: Run validations
         id: validate
