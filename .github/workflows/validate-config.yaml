@@ -60,7 +60,7 @@ jobs:
             timestamp(diff)
           } else {
             cat("result=true", "\n", file = output, sep = "", append = TRUE)
-            writeLines(":white_check_mark: all checks passed\n", diff)
+            writeLines(":white_check_mark: Hub correctly configured!\n", diff)
             timestamp(diff)
           }
         shell: Rscript {0}
