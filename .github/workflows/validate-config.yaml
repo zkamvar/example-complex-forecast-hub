@@ -7,7 +7,7 @@ on:
   pull_request:
     branches: main
     paths:
-      - '${{ env.HUB_PATH }}/hub-config/**'
+      - "$HUB_PATH/hub-config/**"
       - '!**README**'
 
 jobs:
