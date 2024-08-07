@@ -13,5 +13,13 @@
     },
     "file_format": ["csv"],
     "timezone": "US/Eastern",
-    "model_output_dir": "model-output"
+    "model_output_dir": "model-output",
+    "cloud": {
+        "enabled": true,
+        "host": {
+          "name": "aws",
+          "storage_service": "s3",
+          "storage_location": "example-complex-forecast-hub"
+        }
+    }
 }
